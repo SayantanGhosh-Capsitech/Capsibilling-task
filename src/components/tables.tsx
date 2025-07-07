@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Space, Table, Button, Flex, Drawer } from 'antd';
 import { EditOutlined,DeleteOutlined,PlusOutlined, DownloadOutlined, UploadOutlined  } from '@ant-design/icons';
 import type { TableProps } from 'antd';
+import "../App.css";
 
 interface DataType {
   key: string;
@@ -51,7 +52,9 @@ const columns: TableProps<DataType>['columns'] = [
     render: (_, record) => (
       <Space size="middle">
         <EditOutlined />
-        <DeleteOutlined style={{ color: 'red' }} />
+        <Button color="danger" variant="outlined" className='dltbttn'>
+          <DeleteOutlined style={{ color: 'red' }} />
+          </Button>
       </Space>
     ),
   },
@@ -85,7 +88,7 @@ const Tables: React.FC = () => {
     {/* <-------------------------------Drawer---------------------------> */}
     <Drawer
         title="Add Party"
-        width={720}
+        width={920}
         onClose={onClose}
         open={open}
         styles={{
