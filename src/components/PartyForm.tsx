@@ -5,13 +5,13 @@ import {statedata} from "./StateData"
 const { Title } = Typography;
 const { Option } = Select;
 
-const states = [
-  "Andhra Pradesh",
-  "Delhi",
-  "Karnataka",
-  "Maharashtra",
-  "West Bengal",
-];
+// const states = [
+//   "Andhra Pradesh",
+//   "Delhi",
+//   "Karnataka",
+//   "Maharashtra",
+//   "West Bengal",
+// ];
 
 const Partyform: React.FC = () => {
   const [form] = Form.useForm();
@@ -53,7 +53,7 @@ const Partyform: React.FC = () => {
         autoComplete="off"
         style={{ maxWidth: 1000, margin: "auto" }}
       >
-        {/* Party Details */}
+        {/*---------------------------------- Party Details-------------------------------- */}
         <Row gutter={16}>
           <Col span={8}>
             <Form.Item
@@ -90,7 +90,7 @@ const Partyform: React.FC = () => {
           </Col>
         </Row>
 
-        {/* Business Details */}
+        {/*------------------------------------------------- Business Details---------------------------------------- */}
         {selectedOption === "TradePs" && (
           <>
             <Title level={4}>Business Details</Title>
@@ -166,9 +166,9 @@ const Partyform: React.FC = () => {
                     rules={[{ required: true }]}
                   >
                     <Select placeholder="State">
-                      {states.map((s) => (
-                        <Option key={s} value={s}>
-                          {s}
+                      {statedata.map((s) => (
+                        <Option key={s.id} value={s.name}>
+                          {s.name}
                         </Option>
                       ))}
                     </Select>
@@ -186,11 +186,11 @@ const Partyform: React.FC = () => {
                     rules={[{ required: true }]}
                   >
                     <Select placeholder="State" disabled>
-                      {states.map((s) => (
-                        <Option key={s} value={s}>
-                          {s}
+                      {/* {statedata.map((s) => (
+                        <Option key={s.id} value={s.name}>
+                          {s.name}
                         </Option>
-                      ))}
+                      ))} */}
                     </Select>
                   </Form.Item>
                 </Col>
@@ -241,7 +241,7 @@ const Partyform: React.FC = () => {
               {/* <Row gutter={16}> */}
               <Col span={6}>
                 <Form.Item label="MSME Number" name="msme">
-                  <Input addonBefore="UDYAM-" placeholder="XX-00-0123456" />
+                  <Input addonBefore="UDYAM-" placeholder="XX-00-0123456" maxLength={13}/>
                 </Form.Item>
               </Col>
               <Col span={6}>
@@ -256,6 +256,7 @@ const Partyform: React.FC = () => {
             </Row>
             {/* --------------------------------Contact Details----------------------- */}
             <Title level={4}>Contact Details</Title>
+
           </>
         )}
       </Form>
