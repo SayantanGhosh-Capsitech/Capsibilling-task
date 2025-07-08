@@ -254,9 +254,10 @@ const Partyform: React.FC = () => {
                 </Form.Item>
               </Col>
             </Row>
+            {/* --------------------------------Contact Details----------------------- */}
+            <Title level={4}>Contact Details</Title>
           </>
         )}
-        <Title level={4}>Contact Details</Title>
       </Form>
     </>
   );
