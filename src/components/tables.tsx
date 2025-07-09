@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Space, Table, Button, Flex, Drawer } from "antd";
+import onFinish from "./PartyForm";
 import {
   EditOutlined,
   DeleteOutlined,
@@ -109,11 +110,19 @@ const Tables: React.FC = () => {
             </Button>
           </Space>
         }
+        footer={
+          <Space style={{display:"flex", justifyContent:"flex-end"}}>
+            <Button onClick={onClose}>Cancel</Button>
+            <Button onClick={onFinish} type="primary">
+              Submit
+            </Button>
+          </Space>
+        }
       >
         <Partyform />
       </Drawer>
       <Flex gap="small" wrap>
-        <Button color="primary" variant="solid" onClick={showDrawer}>
+        <Button color="primary" variant="solid" onClick={showDrawer} style={{background:"#004b8b", color:"#ffff"}}>
           <PlusOutlined />
           Party
         </Button>
