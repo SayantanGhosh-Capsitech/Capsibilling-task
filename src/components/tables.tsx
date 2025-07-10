@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import { Space, Table, Button, Flex, Drawer } from "antd";
-import onFinish from "./PartyForm";
+import React, { useState, useEffect } from "react";
+import { Space, Table, Button, Flex } from "antd";
+import type { PartyFormValues } from "./PartyForm";
+import Partyform from "./PartyForm";
 import {
   EditOutlined,
   DeleteOutlined,
@@ -10,7 +11,6 @@ import {
 } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import "../App.css";
-import Partyform from "./PartyForm";
 
 interface DataType {
   key: string;
@@ -18,126 +18,128 @@ interface DataType {
   pname: string;
   pgroup: string;
   ptype: string;
-  cno: number;
+  cno: string;   
   email: string;
 }
 
-const columns: TableProps<DataType>["columns"] = [
-  {
-    title: "S.No.",
-    dataIndex: "sno",
-    key: "sno",
-  },
-  {
-    title: "Party's Name",
-    dataIndex: "pname",
-    key: "pname",
-    render: (text) => <a>{text}</a>,
-  },
-  {
-    title: "Party Group",
-    dataIndex: "pgroup",
-    key: "pgroup",
-  },
-  {
-    title: "Party Type",
-    dataIndex: "ptype",
-    key: "ptype",
-  },
-  {
-    title: "Contact No",
-    dataIndex: "cno",
-    key: "cno",
-  },
-  {
-    title: "Email",
-    dataIndex: "email",
-    key: "email",
-  },
-  {
-    title: "Action",
-    key: "action",
-    render: (_, record) => (
-      <Space size="middle">
-        <EditOutlined />
-        <Button color="danger" variant="outlined" className="dltbttn">
-          <DeleteOutlined style={{ color: "red" }} />
-        </Button>
-      </Space>
-    ),
-  },
-];
-
-const data: DataType[] = [
-  {
-    key: "1",
-    sno: 1,
-    pname: "Sayantan",
-    pgroup: "Trade Receivables - Sundry Debtors",
-    ptype: "Consumer",
-    cno: 123456789,
-    email: "sayantan.ghosh@capsitech.com",
-  },
-];
-
 const Tables: React.FC = () => {
-  const [open, setOpen] = useState(false);
-
-  const showDrawer = () => {
-    setOpen(true);
+  const [open, setOpen] = React.useState<boolean>(false);
+  const [tableData, setTableData] = useState<DataType[]>([]);
+  const fetchData = () => {
+    const localData: PartyFormValues[] = JSON.parse(
+      localStorage.getItem("partyFormData") || "[]"
+    );
+    const tableData: DataType[] = localData.map((item, index) => ({
+      key: `${index}`,
+      sno: index + 1,
+      pname: item.partyName,
+      pgroup: item.partyGroup,
+      ptype: item.gstType || "-",
+      cno: item.contacts?.[0]?.phone || "-",
+      email: item.contacts?.[0]?.email || "-",
+    }));
+    setTableData(tableData);
   };
-  const onClose = () => {
-    setOpen(false);
+
+  useEffect(() => {
+    fetchData();
+  }, [open]);
+
+  const updateValue=()=>{
+   setOpen(true);
+  } 
+
+  const handleDelete = (recordKey: string) => {
+    const storedData: PartyFormValues[] = JSON.parse(
+      localStorage.getItem("partyFormData") || "[]"
+    );
+    const index = parseInt(recordKey);
+    storedData.splice(index, 1);
+    localStorage.setItem("partyFormData", JSON.stringify(storedData));
+    fetchData();
   };
 
-  return (
+  const columns: TableProps<DataType>["columns"] = [
+    {
+      title: "S.No.",
+      dataIndex: "sno",
+      key: "sno",
+    },
+    {
+      title: "Party's Name",
+      dataIndex: "pname",
+      key: "pname",
+      render: (text) => <a>{text}</a>,
+    },
+    {
+      title: "Party Group",
+      dataIndex: "pgroup",
+      key: "pgroup",
+    },
+    {
+      title: "Party Type",
+      dataIndex: "ptype",
+      key: "ptype",
+    },
+    {
+      title: "Contact No",
+      dataIndex: "cno",
+      key: "cno",
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+    },
+    {
+      title: "Action",
+      key: "action",
+      render: (_, record) => (
+        <Space size="middle">
+          <EditOutlined onClick={()=>updateValue()}/>
+          <Button
+            color="danger"
+            variant="outlined"
+            className="dltbttn"
+            onClick={() => handleDelete(record.key)}
+          >
+            <DeleteOutlined style={{ color: "red" }} />
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+  return ( 
     <>
-      {/* <-------------------------------Drawer---------------------------> */}
-      <Drawer
-        title="Add Party"
-        width={920}
-        onClose={onClose}
-        open={open}
-        styles={{
-          body: {
-            paddingBottom: 80,
-          },
-        }}
-        extra={
-          <Space>
-            <Button  shape="round" size={"middle"} style={{background:"#004b8b", color:"#ffff", fontWeight:"bold"}}>
-              Business Entity
-            </Button>
-          </Space>
-        }
-        footer={
-          <Space style={{display:"flex", justifyContent:"flex-end"}}>
-            <Button onClick={onClose}>Cancel</Button>
-            <Button onClick={onFinish} type="primary">
-              Submit
-            </Button>
-          </Space>
-        }
-      >
-        <Partyform />
-      </Drawer>
       <Flex gap="small" wrap>
-        <Button color="primary" variant="solid" onClick={showDrawer} style={{background:"#004b8b", color:"#ffff"}}>
-          <PlusOutlined />
-          Party
+        <Button
+          onClick={()=>setOpen(true)}
+          style={{ background: "#004b8b", color: "#ffff" }}
+        >
+          <PlusOutlined /> Party
         </Button>
-        <Button color="default" variant="outlined">
-          <DownloadOutlined />
-          Export
+        <Button>
+          <DownloadOutlined /> Export
         </Button>
-        <Button color="default" variant="outlined">
-          <UploadOutlined />
-          Import parties
+        <Button>
+          <UploadOutlined /> Import parties
         </Button>
       </Flex>
-      <Table<DataType> columns={columns} dataSource={data} />;
+
+      {open && (
+        <Partyform
+          open={open}
+          setOpen={(e) => setOpen(e)}
+        />
+      )}
+      <Table<DataType>
+        columns={columns}
+        dataSource={tableData}
+        pagination={{ pageSize: 10 }}
+        size="small"
+        style={{ marginTop: "10px", marginLeft: "20px" }}
+      />
     </>
   );
 };
-
 export default Tables;
