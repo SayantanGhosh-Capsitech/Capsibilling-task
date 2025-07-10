@@ -389,7 +389,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                     <Form.Item
                       label="State"
                       name="state"
-                      rules={[{ required: true }]}
+                      rules={[{ required: true, message:"State is required" }]}
                       style={{ marginBottom: "7px" }}
                     >
                       <Select placeholder="State">
@@ -414,18 +414,10 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                       rules={[{ required: true }]}
                     >
                       <Select placeholder="State" disabled>
-                        {/* {statedata.map((s) => (
-                        <Option key={s.id} value={s.name}>
-                          {s.name}
-                        </Option>
-                      ))} */}
                       </Select>
                     </Form.Item>
                   </Col>
                 )}
-                {/* </Col> */}
-                {/* </Row>
-            <Row gutter={16}> */}
                 <Col span={6}>
                   <Form.Item
                     label="Business Type"
@@ -961,6 +953,12 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                                 <Form.Item
                                   {...field}
                                   name={[field.name, "country"]}
+                                  rules={[
+                                    {
+                                      required:true,
+                                      message: "Country is required"
+                                    }
+                                  ]}
                                 >
                                   <Select placeholder="Country">
                                     <Option>India</Option>
