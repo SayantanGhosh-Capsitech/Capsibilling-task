@@ -47,7 +47,6 @@ const treeData = [
     ],
   },
 ];
-
 export interface PartyFormValues {
   partyName: string;
   alias?: string;
@@ -71,6 +70,38 @@ export interface PartyFormValues {
   }[];
   addresses?: any[];
 }
+const gstTypes = [
+  { id: 1, name: "Unregistered" },
+  { id: 2, name: "Regular" },
+  { id: 3, name: "Composition" },
+  { id: 4, name: "Import/Export" },
+  { id: 5, name: "SEZ" },
+  { id: 6, name: "Deemed Export/Import" },
+];
+const businessTypes = [
+  { id: 1, name: "Private Limited" },
+  { id: 2, name: "Public Limited" },
+  { id: 3, name: "Sole Proprietorship" },
+  { id: 4, name: "Partnership" },
+  { id: 5, name: "LLP" },
+  { id: 6, name: "LLC" },
+  { id: 7, name: "HUF" },
+  { id: 8, name: "NGO" },
+  { id: 9, name: "Govt Authority" },
+];
+const businessNatures = [
+  { id: 1, name: "Unspecified" },
+  { id: 2, name: "Manufacturing" },
+  { id: 3, name: "Service Provider" },
+  { id: 4, name: "Trader" },
+];
+const addressTypes = [
+  { id: 1, name: "Registered Address" },
+  { id: 2, name: "Business Address" },
+  { id: 3, name: "Branch Address" },
+  { id: 4, name: "Unit Address" },
+  { id: 5, name: "Godown Address" },
+];
 interface IOpen {
   open: boolean;
   setOpen: (value: React.SetStateAction<boolean>) => void;
@@ -81,7 +112,7 @@ interface IOpen {
 const Partyform: React.FC<IOpen> = (props: IOpen) => {
   const [form] = Form.useForm();
   const [selectedOption, setSelectedOption] = useState<string>("");
-  const [selectGst, setSelectGst] = useState<string>("Unregistered");
+  const [selectGst, setSelectGst] = useState<number | String>("Unregistered");
 
   const [value, setValue] = useState<string>();
 
@@ -94,22 +125,42 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
   };
 
   const handleSubmit = async () => {
-    try {
-      const values = await form.validateFields();
-      if (props.onSave) {
-        props.onSave(values);
-      } else {
-        const existingData = JSON.parse(
-          localStorage.getItem("partyFormData") || "[]"
-        );
-        const updatedData = [...existingData, values];
-        localStorage.setItem("partyFormData", JSON.stringify(updatedData));
-        props.setOpen(false);
-      }
-    } catch (error) {
-      // console.log("Validation Failed:", error);
+  try {
+    const values = await form.validateFields();
+
+      if (values.msme) {
+      const cleanMsme = values.msme.replace(/^UDYAM-/, "");
+      values.msme = `UDYAM-${cleanMsme}`;
     }
-  };
+    if (values.addresses) {
+      values.addresses = values.addresses.map((addr: any) => ({
+        type: addr.type ?? 0,
+        addressName: addr.addressName || "",
+        address: {
+          building: addr.building || "",
+          street: addr.street || "",
+          landmark: addr.landmark ?? null,
+          city: addr.city || "",
+          district: addr.district || "",
+          pincode: addr.pincode || "",
+          state: Number(addr.state) || 0,
+          overseasState: Number(addr.overseasState) || 0,
+          country: addr.country || "",
+        },
+      }));
+    }
+    if (props.onSave) {
+      props.onSave(values);
+    } else {
+      const existingData = JSON.parse(localStorage.getItem("partyFormData") || "[]");
+      const updatedData = [...existingData, values];
+      localStorage.setItem("partyFormData", JSON.stringify(updatedData));
+      props.setOpen(false);
+    }
+  } catch (error) {
+    // console.log("Validation Failed:", error);
+  }
+};
 
   const handleGstNum = (value: string) => {
     setSelectGst(value);
@@ -126,7 +177,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
     const stateCode = value.slice(0, 2);
     console.log(stateCode);
     const result = statedata.find(({ id }) => id === parseInt(stateCode));
-    form.setFieldValue("state", result?.name);
+    form.setFieldValue("state", result?.id);
     form.setFieldValue("pan", panNo);
   };
   useEffect(() => {
@@ -137,21 +188,13 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
       setValue(props.initialValues.partyGroup);
     }
   }, [props.initialValues]);
-//  const initialData : Partial<PartyFormValues> = props.initialValues || {};
- 
-// const formInitialValues:  Partial<PartyFormValues> = {
-//   ...initialData,
-//   ...(initialData?.gstType === 'Unregistered' && {
-//     businessNature: ['Unspecified'],
-//   }),
-// };
   return (
     <>
-    {/* --------------------------------------------Drawer--------------------------- */}
+      {/* --------------------------------------------Drawer--------------------------- */}
       <Drawer
         title="Add Party"
         width={920}
-        onClose={()=>onClose()}
+        onClose={() => onClose()}
         open={props.open}
         styles={{
           body: {
@@ -175,7 +218,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
         }
         footer={
           <Space style={{ display: "flex", justifyContent: "flex-end" }}>
-            <Button onClick={()=>onClose()}>Cancel</Button>
+            <Button onClick={() => onClose()}>Cancel</Button>
             <Button
               onClick={() => {
                 handleSubmit();
@@ -301,20 +344,20 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                       },
                     ]}
                   >
-                    <Select onChange={handleGstNum} placeholder="Select GST type">
-                      <Option value="Unregistered">Unregistered</Option>
-                      <Option value="Regular">Regular</Option>
-                      <Option value="Composition">Composition</Option>
-                      <Option value="ImportExport">Import/Export</Option>
-                      <Option value="SEZ">SEZ</Option>
-                      <Option value="DeemedExportImport">
-                        Deemed Export/Import
-                      </Option>
+                    <Select
+                      onChange={handleGstNum}
+                      placeholder="Select GST type"
+                    >
+                      {gstTypes.map((type) => (
+                        <Option key={type.id} value={type.id}>
+                          {type.name}
+                        </Option>
+                      ))}
                     </Select>
                   </Form.Item>
                 </Col>
 
-                {selectGst === "Unregistered" && (
+                {selectGst === 1 && (
                   <Col span={6}>
                     <Form.Item
                       label="GSTIN"
@@ -325,10 +368,10 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                     </Form.Item>
                   </Col>
                 )}
-                {(selectGst === "Regular" ||
-                  selectGst === "Composition" ||
-                  selectGst === "SEZ" ||
-                  selectGst === "DeemedExportImport") && (
+                {(selectGst === 2 ||
+                  selectGst === 3 ||
+                  selectGst === 5 ||
+                  selectGst === 6) && (
                   <Col span={6}>
                     <Form.Item
                       label="GSTIN"
@@ -353,8 +396,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                   </Col>
                 )}
 
-                {(selectGst === "Unregistered" ||
-                  selectGst === "ImportExport") && (
+                {(selectGst === 1 || selectGst === 4) && (
                   <Col span={6}>
                     <Form.Item
                       label="PAN Card"
@@ -384,10 +426,10 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                     </Form.Item>
                   </Col>
                 )}
-                {(selectGst === "Regular" ||
-                  selectGst === "Composition" ||
-                  selectGst === "SEZ" ||
-                  selectGst === "DeemedExportImport") && (
+                {(selectGst === 2 ||
+                  selectGst === 3 ||
+                  selectGst === 5 ||
+                  selectGst === 6) && (
                   <Col span={6}>
                     <Form.Item
                       label="PAN Card"
@@ -398,7 +440,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                     </Form.Item>
                   </Col>
                 )}
-                {selectGst === "Unregistered" && (
+                {selectGst === 1 && (
                   <Col span={6}>
                     <Form.Item
                       label="State"
@@ -408,7 +450,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                     >
                       <Select placeholder="State">
                         {statedata.map((s) => (
-                          <Option key={s.id} value={s.name}>
+                          <Option key={s.id} value={s.id}>
                             {s.name}
                           </Option>
                         ))}
@@ -416,10 +458,10 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                     </Form.Item>
                   </Col>
                 )}
-                {(selectGst === "Regular" ||
-                  selectGst === "Composition" ||
-                  selectGst === "SEZ" ||
-                  selectGst === "DeemedExportImport") && (
+                {(selectGst === 2 ||
+                  selectGst === 3 ||
+                  selectGst === 5 ||
+                  selectGst === 6) && (
                   <Col span={6}>
                     <Form.Item
                       label="State"
@@ -427,7 +469,13 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                       style={{ marginBottom: "7px" }}
                       rules={[{ required: true }]}
                     >
-                      <Select placeholder="State" disabled></Select>
+                      <Select placeholder="State" disabled>
+                        {statedata.map((s) => (
+                          <Option key={s.id} value={s.id}>
+                            {s.name}
+                          </Option>
+                        ))}
+                      </Select>
                     </Form.Item>
                   </Col>
                 )}
@@ -438,19 +486,11 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                     style={{ marginBottom: "7px" }}
                   >
                     <Select placeholder="Select type">
-                      <Option value="Private Limited">Private Limited</Option>
-                      <Option value="Public Limited">Public Limited</Option>
-                      <Option value="Sole Proprietorship">
-                        Sole Proprietorship
-                      </Option>
-                      <Option value="Partnership">Partnership</Option>
-                      <Option value="LLP">LLP</Option>
-                      <Option value="LLC">LLC</Option>
-                      <Option value="HUF">Hindu Undivided Family</Option>
-                      <Option value="NGO">NGO</Option>
-                      <Option value="Govt Authority">
-                        Govt. Authority (Local Authority)
-                      </Option>
+                      {businessTypes.map((type) => (
+                        <Option key={type.id} value={type.id}>
+                          {type.name}
+                        </Option>
+                      ))}
                     </Select>
                   </Form.Item>
                 </Col>
@@ -461,10 +501,11 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                     style={{ marginBottom: "7px" }}
                   >
                     <Select mode="multiple" placeholder="Select nature">
-                      <Option value="Unspecified">Unspecified</Option>
-                      <Option value="Manufacturing">Manufacturing</Option>
-                      <Option value="Service">Service Provider</Option>
-                      <Option value="Trading">Trader</Option>
+                      {businessNatures.map((nature) => (
+                        <Option key={nature.id} value={nature.id}>
+                          {nature.name}
+                        </Option>
+                      ))}
                     </Select>
                   </Form.Item>
                 </Col>
@@ -763,21 +804,11 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                                 style={{ marginBottom: "2px" }}
                               >
                                 <Select placeholder="Type">
-                                  <Option value="Registered Address">
-                                    Registered Address
-                                  </Option>
-                                  <Option value="Business Address">
-                                    Business Address
-                                  </Option>
-                                  <Option value="Branch Address">
-                                    Branch Address
-                                  </Option>
-                                  <Option value="Unit Address">
-                                    Unit Address
-                                  </Option>
-                                  <Option value="Godown Address">
-                                    Godown Address
-                                  </Option>
+                                  {addressTypes.map((type) => (
+                                    <Option key={type.id} value={type.id}>
+                                      {type.name}
+                                    </Option>
+                                  ))}
                                 </Select>
                               </Form.Item>
                               <Form.Item
@@ -955,7 +986,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                                 >
                                   <Select placeholder="State">
                                     {statedata.map((s) => (
-                                      <Option key={s.id} value={s.name}>
+                                      <Option key={s.id} value={s.id}>
                                         {s.name}
                                       </Option>
                                     ))}

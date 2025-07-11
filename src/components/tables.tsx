@@ -21,6 +21,14 @@ interface DataType {
   cno: string;
   email: string;
 }
+const gstTypeMap: { [key: number]: string } = {
+  1: "Unregistered",
+  2: "Regular",
+  3: "Composition",
+  4: "Import/Export",
+  5: "SEZ",
+  6: "Deemed Export/Import"
+};
 
 const Tables: React.FC = () => {
   const [open, setOpen] = React.useState<boolean>(false);
@@ -30,20 +38,25 @@ const Tables: React.FC = () => {
     useState<PartyFormValues | null>(null);
 
   const fetchData = () => {
-    const localData: PartyFormValues[] = JSON.parse(
-      localStorage.getItem("partyFormData") || "[]"
-    );
-    const tableData: DataType[] = localData.map((item, index) => ({
-      key: `${index}`,
-      sno: index + 1,
-      pname: item.partyName,
-      pgroup: item.partyGroup,
-      ptype: item.gstType || "-",
-      cno: item.contacts?.[0]?.phone || "-",
-      email: item.contacts?.[0]?.email || "-",
-    }));
-    setTableData(tableData);
-  };
+  const localData: PartyFormValues[] = JSON.parse(
+    localStorage.getItem("partyFormData") || "[]"
+  );
+
+  const tableData: DataType[] = localData.map((item, index) => ({
+    key: `${index}`,
+    sno: index + 1,
+    pname: item.partyName,
+    pgroup: item.partyGroup,
+    ptype:
+      item.gstType !== undefined && gstTypeMap[Number(item.gstType)]
+        ? gstTypeMap[Number(item.gstType)]
+        : "-",
+    cno: item.contacts?.[0]?.phone || "-",
+    email: item.contacts?.[0]?.email || "-"
+  }));
+
+  setTableData(tableData);
+};
 
   useEffect(() => {
     fetchData();
