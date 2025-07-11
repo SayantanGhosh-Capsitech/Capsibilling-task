@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Form,
   Input,
@@ -9,7 +9,6 @@ import {
   Checkbox,
   Button,
   Drawer,
-  message,
   Space,
 } from "antd";
 import { statedata } from "./StateData";
@@ -28,6 +27,10 @@ import type { TreeSelectProps } from "antd";
 
 const treeData = [
   {
+    value: "Trade Payables - Sundry Creditors",
+    title: "Trade Payables - Sundry Creditors",
+  },
+  {
     value: "TradeReceivables-SundryDebtors",
     title: "Trade Receivables - Sundry Debtors",
     children: [
@@ -35,22 +38,10 @@ const treeData = [
         value: "Rajasthan",
         title: "Rajasthan",
         children: [
-          {
-            value: "dmart",
-            title: "dmart",
-          },
-          {
-            value: "DPS",
-            title: "DPS",
-          },
-          {
-            value: "DSFDSF",
-            title: "DSFDSF",
-          },
-          {
-            value: "Jodhpur",
-            title: "Jodhpur",
-          },
+          { value: "dmart", title: "dmart" },
+          { value: "DPS", title: "DPS" },
+          { value: "DSFDSF", title: "DSFDSF" },
+          { value: "Jodhpur", title: "Jodhpur" },
         ],
       },
     ],
@@ -83,6 +74,8 @@ export interface PartyFormValues {
 interface IOpen {
   open: boolean;
   setOpen: (value: React.SetStateAction<boolean>) => void;
+  initialValues?: PartyFormValues | null;
+  onSave?: (values: PartyFormValues) => void;
 }
 
 const Partyform: React.FC<IOpen> = (props: IOpen) => {
@@ -100,16 +93,19 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
     console.log("onPopupScroll", e);
   };
 
-  const handleCustomSubmit = async () => {
+  const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      console.log("Form data:", values);
-      const existingData = JSON.parse(
-        localStorage.getItem("partyFormData") || "[]"
-      );
-      const updatedData = [...existingData, values];
-      localStorage.setItem("partyFormData", JSON.stringify(updatedData));
-      onClose();
+      if (props.onSave) {
+        props.onSave(values);
+      } else {
+        const existingData = JSON.parse(
+          localStorage.getItem("partyFormData") || "[]"
+        );
+        const updatedData = [...existingData, values];
+        localStorage.setItem("partyFormData", JSON.stringify(updatedData));
+        props.setOpen(false);
+      }
     } catch (error) {
       // console.log("Validation Failed:", error);
     }
@@ -119,8 +115,8 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
     setSelectGst(value);
   };
   const onClose = () => {
+    form.resetFields();
     props.setOpen(false);
-    message.success("Party saved successfully");
   };
   const gstFunction = (event: React.FocusEvent<HTMLInputElement, Element>) => {
     const value = event.target.value;
@@ -133,13 +129,29 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
     form.setFieldValue("state", result?.name);
     form.setFieldValue("pan", panNo);
   };
-
+  useEffect(() => {
+    if (props.initialValues) {
+      form.setFieldsValue(props.initialValues);
+      setSelectedOption(props.initialValues.partyGroup);
+      setSelectGst(props.initialValues.gstType || "Unregistered");
+      setValue(props.initialValues.partyGroup);
+    }
+  }, [props.initialValues]);
+//  const initialData : Partial<PartyFormValues> = props.initialValues || {};
+ 
+// const formInitialValues:  Partial<PartyFormValues> = {
+//   ...initialData,
+//   ...(initialData?.gstType === 'Unregistered' && {
+//     businessNature: ['Unspecified'],
+//   }),
+// };
   return (
     <>
+    {/* --------------------------------------------Drawer--------------------------- */}
       <Drawer
         title="Add Party"
         width={920}
-        onClose={onClose}
+        onClose={()=>onClose()}
         open={props.open}
         styles={{
           body: {
@@ -163,10 +175,10 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
         }
         footer={
           <Space style={{ display: "flex", justifyContent: "flex-end" }}>
-            <Button onClick={onClose}>Cancel</Button>
+            <Button onClick={()=>onClose()}>Cancel</Button>
             <Button
               onClick={() => {
-                handleCustomSubmit();
+                handleSubmit();
               }}
               type="primary"
             >
@@ -179,6 +191,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
           form={form}
           layout="vertical"
           // onFinish={onFinish}
+          initialValues={props.initialValues || {}}
           autoComplete="off"
           style={{ maxWidth: 1000, margin: "auto" }}
         >
@@ -271,7 +284,8 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
             selectedOption === "dmart" ||
             selectedOption === "DPS" ||
             selectedOption === "DSFDSF" ||
-            selectedOption === "Jodhpur") && (
+            selectedOption === "Jodhpur" ||
+            selectedOption === "Trade Payables - Sundry Creditors") && (
             <>
               <Title level={4}>Business Details</Title>
               <Row gutter={16}>
@@ -287,7 +301,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                       },
                     ]}
                   >
-                    <Select defaultValue="Unregistered" onChange={handleGstNum}>
+                    <Select onChange={handleGstNum} placeholder="Select GST type">
                       <Option value="Unregistered">Unregistered</Option>
                       <Option value="Regular">Regular</Option>
                       <Option value="Composition">Composition</Option>
@@ -389,7 +403,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                     <Form.Item
                       label="State"
                       name="state"
-                      rules={[{ required: true, message:"State is required" }]}
+                      rules={[{ required: true, message: "State is required" }]}
                       style={{ marginBottom: "7px" }}
                     >
                       <Select placeholder="State">
@@ -413,8 +427,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                       style={{ marginBottom: "7px" }}
                       rules={[{ required: true }]}
                     >
-                      <Select placeholder="State" disabled>
-                      </Select>
+                      <Select placeholder="State" disabled></Select>
                     </Form.Item>
                   </Col>
                 )}
@@ -541,7 +554,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                   </Form.Item>
                 </Col>
               </Row>
-              {/* --------------------------------Contact Details----------------------- */}
+              {/* ------------------------------------------------Contact Details------------------------------------------------------- */}
               <Title level={4}>Contact Details</Title>
               <Form.List name="contacts" initialValue={[{}]}>
                 {(fields, { add, remove }) => (
@@ -550,7 +563,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                       <Row gutter={8} align="middle" key={field.key}>
                         <Col span={5}>
                           <Form.Item
-                            {...field}
+                            key={field.key}
                             name={[field.name, "name"]}
                             rules={[
                               {
@@ -578,7 +591,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                         </Col>
                         <Col span={5}>
                           <Form.Item
-                            {...field}
+                            key={field.key}
                             name={[field.name, "designation"]}
                             rules={[
                               {
@@ -606,7 +619,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                         </Col>
                         <Col span={4}>
                           <Form.Item
-                            {...field}
+                            key={field.key}
                             name={[field.name, "phone"]}
                             rules={[
                               {
@@ -637,7 +650,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                         </Col>
                         <Col span={4}>
                           <Form.Item
-                            {...field}
+                            key={field.key}
                             name={[field.name, "email"]}
                             rules={[
                               {
@@ -668,7 +681,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                         </Col>
                         <Col span={4}>
                           <Form.Item
-                            {...field}
+                            key={field.key}
                             name={[field.name, "cc"]}
                             rules={[
                               {
@@ -722,7 +735,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                   </>
                 )}
               </Form.List>
-              {/* --------------------------------Address Details----------------------- */}
+              {/* ----------------------------------------------------Address Details------------------------------------------------------- */}
               <Title level={4}>Address Details</Title>
               <Form.List name="addresses" initialValue={[{}]}>
                 {(fields, { add, remove }) => (
@@ -744,7 +757,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                           <Row gutter={16}>
                             <Col span={24}>
                               <Form.Item
-                                {...field}
+                                key={field.key}
                                 label="Addresses Type"
                                 name={[field.name, "type"]}
                                 style={{ marginBottom: "2px" }}
@@ -768,7 +781,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                                 </Select>
                               </Form.Item>
                               <Form.Item
-                                {...field}
+                                key={field.key}
                                 label="Name"
                                 name={[field.name, "name"]}
                                 rules={[
@@ -816,7 +829,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                             <Row style={{ marginTop: "6px" }}>
                               <Col span={8} style={{ marginBottom: 0 }}>
                                 <Form.Item
-                                  {...field}
+                                  key={field.key}
                                   name={[field.name, "building"]}
                                   style={{ marginBottom: "0px" }}
                                 >
@@ -825,7 +838,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                               </Col>
                               <Col span={8}>
                                 <Form.Item
-                                  {...field}
+                                  key={field.key}
                                   name={[field.name, "street"]}
                                   style={{ marginBottom: "0px" }}
                                 >
@@ -834,7 +847,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                               </Col>
                               <Col span={8}>
                                 <Form.Item
-                                  {...field}
+                                  key={field.key}
                                   name={[field.name, "landmark"]}
                                   style={{ marginBottom: "0px" }}
                                 >
@@ -845,7 +858,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                             <Row style={{}}>
                               <Col span={8}>
                                 <Form.Item
-                                  {...field}
+                                  key={field.key}
                                   name={[field.name, "city"]}
                                   style={{ marginBottom: "0px" }}
                                   rules={[
@@ -876,7 +889,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                               </Col>
                               <Col span={8}>
                                 <Form.Item
-                                  {...field}
+                                  key={field.key}
                                   name={[field.name, "district"]}
                                   style={{ marginBottom: "0px" }}
                                   rules={[
@@ -907,7 +920,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                               </Col>
                               <Col span={8}>
                                 <Form.Item
-                                  {...field}
+                                  key={field.key}
                                   name={[field.name, "pincode"]}
                                   style={{ marginBottom: "0px" }}
                                   rules={[
@@ -937,7 +950,7 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                             <Row style={{ width: "100%" }}>
                               <Col span={8}>
                                 <Form.Item
-                                  {...field}
+                                  key={field.key}
                                   name={[field.name, "State"]}
                                 >
                                   <Select placeholder="State">
@@ -951,17 +964,17 @@ const Partyform: React.FC<IOpen> = (props: IOpen) => {
                               </Col>
                               <Col span={8}>
                                 <Form.Item
-                                  {...field}
+                                  key={field.key}
                                   name={[field.name, "country"]}
-                                  rules={[
-                                    {
-                                      required:true,
-                                      message: "Country is required"
-                                    }
-                                  ]}
+                                  // rules={[
+                                  //   {
+                                  //     required:true,
+                                  //     // message: "Country is required"
+                                  //   }
+                                  // ]}
                                 >
                                   <Select placeholder="Country">
-                                    <Option>India</Option>
+                                    <Option value="india">India</Option>
                                   </Select>
                                 </Form.Item>
                               </Col>

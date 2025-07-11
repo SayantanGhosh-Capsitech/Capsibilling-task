@@ -18,13 +18,17 @@ interface DataType {
   pname: string;
   pgroup: string;
   ptype: string;
-  cno: string;   
+  cno: string;
   email: string;
 }
 
 const Tables: React.FC = () => {
   const [open, setOpen] = React.useState<boolean>(false);
   const [tableData, setTableData] = useState<DataType[]>([]);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [formInitialValues, setFormInitialValues] =
+    useState<PartyFormValues | null>(null);
+
   const fetchData = () => {
     const localData: PartyFormValues[] = JSON.parse(
       localStorage.getItem("partyFormData") || "[]"
@@ -45,9 +49,9 @@ const Tables: React.FC = () => {
     fetchData();
   }, [open]);
 
-  const updateValue=()=>{
-   setOpen(true);
-  } 
+  // const updateValue=()=>{
+  //  setOpen(true);
+  // }
 
   const handleDelete = (recordKey: string) => {
     const storedData: PartyFormValues[] = JSON.parse(
@@ -56,6 +60,31 @@ const Tables: React.FC = () => {
     const index = parseInt(recordKey);
     storedData.splice(index, 1);
     localStorage.setItem("partyFormData", JSON.stringify(storedData));
+    fetchData();
+  };
+  const handleEdit = (recordKey: string) => {
+    const index = parseInt(recordKey);
+    const storedData: PartyFormValues[] = JSON.parse(
+      localStorage.getItem("partyFormData") || "[]"
+    );
+    setEditingIndex(index);
+    setFormInitialValues(storedData[index]);
+    setOpen(true);
+  };
+  const handleSave = (values: PartyFormValues) => {
+    const storedData: PartyFormValues[] = JSON.parse(
+      localStorage.getItem("partyFormData") || "[]"
+    );
+    if (editingIndex !== null) {
+      storedData[editingIndex] = values;
+    } else {
+      storedData.push(values);
+    }
+
+    localStorage.setItem("partyFormData", JSON.stringify(storedData));
+    setOpen(false);
+    setEditingIndex(null);
+    setFormInitialValues(null);
     fetchData();
   };
 
@@ -96,24 +125,24 @@ const Tables: React.FC = () => {
       key: "action",
       render: (_, record) => (
         <Space size="middle">
-          <EditOutlined onClick={()=>updateValue()}/>
+          <EditOutlined onClick={() => handleEdit(record.key)} />
           <Button
-            color="danger"
-            variant="outlined"
+            danger
+            type="text"
             className="dltbttn"
             onClick={() => handleDelete(record.key)}
           >
-            <DeleteOutlined style={{ color: "red" }} />
+            <DeleteOutlined />
           </Button>
         </Space>
       ),
     },
   ];
-  return ( 
+  return (
     <>
       <Flex gap="small" wrap>
         <Button
-          onClick={()=>setOpen(true)}
+          onClick={() =>{setOpen(true); setFormInitialValues(null); }}
           style={{ background: "#004b8b", color: "#ffff" }}
         >
           <PlusOutlined /> Party
@@ -129,7 +158,12 @@ const Tables: React.FC = () => {
       {open && (
         <Partyform
           open={open}
-          setOpen={(e) => setOpen(e)}
+          setOpen={() => {
+            setOpen(false);
+            // setFormInitialValues(null);
+          }}
+          initialValues={formInitialValues}
+          onSave={handleSave}
         />
       )}
       <Table<DataType>
